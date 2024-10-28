@@ -13,4 +13,92 @@
 library(readr)
 library(dplyr)
 library(lubridate)
+library(openxlsx)
 library(tidylog)
+
+#### Step 0a : read in parameters from excel ----
+
+params <- read.xlsx("question_parameters.xlsx")
+
+#### Step x : import data ----
+
+dashboard_fpath <- paste0("/PHI_conf/WaitingTimes/SoT/Projects/R Shiny DQ/",
+                          "Snapshot BOXI/")
+
+perf_nop <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
+                  sheet = "NewOP",
+                          sep.names = "_") |> 
+  mutate(Date = dmy(Date)) |> 
+  filter(Date >= max(Date)-years(1)-days(1),
+         month(Date) %in% c(3,6,9,12)) |> 
+  rename(Indicator = `Ongoing/Completed`) |> 
+  mutate(Indicator = if_else(Indicator == "Completed",
+                             "Attendances", "Ongoing Waits"))
+
+perf_ipdc <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
+                      sheet = "IPDC",
+                      sep.names = "_") |> 
+  mutate(Date = dmy(Date)) |> 
+  filter(Date >= max(Date)-years(1)-days(1),
+         month(Date) %in% c(3,6,9,12)) |> 
+  rename(Indicator = `Ongoing/Completed`) |> 
+  mutate(Indicator = if_else(Indicator == "Completed",
+                             "Admissions", "Ongoing Waits"))
+
+perf <- bind_rows(perf_nop, perf_ipdc) |> 
+  rename(value = `Number_Seen/On_list`) |> 
+  select(1:6)
+
+rm(perf_nop, perf_ipdc)
+
+rr_nop <- read.xlsx(paste0(dashboard_fpath, "RR Monthly.xlsx"),
+                sheet = "ALL",
+                sep.names = "_") |> 
+  mutate(
+    Date = rollforward(my(Date)),
+    quarter = quarter(Date, type = "date_last")) |> 
+  select(-Date) |> 
+  rename(Date = quarter) |> 
+  filter(Date >= max(Date)-years(1)-days(1),
+         month(Date) %in% c(3,6,9,12)) |> 
+  group_by(Patient_Type, NHS_Board_of_Treatment, Specialty, Date) |> 
+  summarise(
+    across(where(is.numeric), sum)
+  ) |> 
+  ungroup() |> 
+  pivot_longer(Additions_to_list:Other_reasons, names_to = "Indicator")
+
+rr_ipdc <- read.xlsx(paste0(dashboard_fpath, "RR Monthly.xlsx"),
+                sheet = "IPDC",
+                sep.names = "_") |> 
+  mutate(
+    Date = rollforward(my(Date)),
+    quarter = quarter(Date, type = "date_last")) |> 
+  select(-Date) |> 
+  rename(Date = quarter) |> 
+  filter(Date >= max(Date)-years(1)-days(1),
+         month(Date) %in% c(3,6,9,12)) |> 
+  group_by(Patient_Type, NHS_Board_of_Treatment, Specialty, Date) |> 
+  summarise(
+    across(where(is.numeric), sum)
+  ) |> 
+  ungroup() |> 
+  pivot_longer(Additions_to_list:Other_reasons, names_to = "Indicator")
+
+rr <- bind_rows(rr_nop, rr_ipdc)
+
+rm(rr_nop, rr_ipdc)
+
+data <- bind_rows(perf, rr)
+
+rm(perf, rr)
+
+#### Step x : pull numbers ----
+
+figs <- inner_join(params, data, by = c("Patient_Type",
+                                        "NHS_Board_of_Treatment",
+                                        "Specialty",
+                                        "Indicator")) |>
+  arrange(Date) |> 
+  pivot_wider(names_from = "Date", values_from = "value")
+

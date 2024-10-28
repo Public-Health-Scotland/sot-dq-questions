@@ -16,6 +16,8 @@ library(lubridate)
 library(tidylog)
 library(openxlsx)
 
+source(code/pull_numbers.R)
+
 #### Step 1 : import out numbers ----
 
 #### Step x : define styles ----
