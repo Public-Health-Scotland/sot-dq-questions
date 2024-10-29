@@ -13,14 +13,15 @@
 library(readr)
 library(dplyr)
 library(lubridate)
-library(openxlsx)
+library(stringr)
 library(tidylog)
+library(openxlsx)
 
 #### Step 0a : read in parameters from excel ----
 
 params <- read.xlsx("question_parameters.xlsx")
 
-#### Step x : import data ----
+#### Step 1 : import dashboard data ----
 
 dashboard_fpath <- paste0("/PHI_conf/WaitingTimes/SoT/Projects/R Shiny DQ/",
                           "Snapshot BOXI/")
@@ -89,11 +90,17 @@ rr <- bind_rows(rr_nop, rr_ipdc)
 
 rm(rr_nop, rr_ipdc)
 
-data <- bind_rows(perf, rr)
+data <- bind_rows(perf, rr) |> 
+  mutate(Indicator = str_replace_all(Indicator, "_", " "),
+         NHS_Board_of_Treatment = if_else(
+           NHS_Board_of_Treatment == "Golden Jubilee National Hospital",
+           "NHS Golden Jubilee",
+           NHS_Board_of_Treatment
+         ))
 
 rm(perf, rr)
 
-#### Step x : pull numbers ----
+#### Step 2 : pull numbers ----
 
 figs <- inner_join(params, data, by = c("Patient_Type",
                                         "NHS_Board_of_Treatment",
