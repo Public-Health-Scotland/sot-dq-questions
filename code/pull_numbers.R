@@ -106,5 +106,7 @@ figs <- inner_join(params, data, by = c("Patient_Type",
                                         "Specialty",
                                         "Indicator")) |>
   arrange(Date) |> 
+  mutate(Date = format(Date, "%D/%M/%Y"),
+         Specialty = str_to_title(Specialty)) |> 
   pivot_wider(names_from = "Date", values_from = "value")
 

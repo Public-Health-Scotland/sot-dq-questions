@@ -71,6 +71,16 @@ s_p_low <- createStyle(
   borderStyle = "thin",
 )
 
+s_data_table_title <- createStyle(
+  fontSize = 16,
+  textDecoration = "bold",
+)
+
+s_data_table_header <- s_table_header <- createStyle(
+  fgFill = "#B8CCE4",
+  textDecoration = "bold"
+)
+
 #### Step x : create xlsx file ----
 
 board <- figs |> 
@@ -81,7 +91,7 @@ board <- figs |>
 qe <- figs |> 
   select(last_col()) |> 
   names() |> 
-  ymd() |> 
+  dmy() |> 
   format("%d %B %Y")
 
 ## create workbook and sheets
@@ -104,7 +114,7 @@ insertImage(wb, "SoT", "phs-logo.png",
             width = 2.29, height = 1)
 
 insertImage(wb, "SoT Data", "phs-logo.png",
-            startRow = 1, startCol = 12,
+            startRow = 1, startCol = 8,
             width = 2.29, height = 1)
 
 # Title
@@ -179,6 +189,73 @@ addStyle(wb, "SoT", s_table, rows = 12:(12+nrow(q_table)), cols = 2:7,
          gridExpand = TRUE, stack = TRUE)
 
 ## Data sheet
+
+setColWidths(wb, "SoT Data", cols = 1:9,
+             widths = c(2.5, 21, 24, 27, 13, 13, 13, 13, 13))
+
+setRowHeights(wb, "SoT Data", rows = 1:2,
+              heights = c(40,31))
+
+writeData(wb, "SoT Data", "Accompanying Data",
+          startRow = 3, startCol = 2)
+addStyle(wb, "SoT Data", s_subtitle, rows = 3, cols = 2:9, gridExpand = TRUE)
+
+
+check_for_merge <- function(q_figs, col) {
+  
+  q_figs <- q_figs |> 
+    mutate(merge = if_else(lag(Indicator, default = 0) == Indicator,
+                           1, 0))
+  
+  mergeCells(wb, "SoT Data", cols = )
+  
+}
+
+#
+paste_data <- function(figs, q) {
+  
+  title <- paste0("Table ", q-1, " - Data for question ", q)
+  
+  q_figs <- figs |> 
+    filter(Question == q) |> 
+    select(`Patient type` = Patient_Type,
+           Specialty,
+           Indicator,
+           6:10)
+  
+  prev_rows <- figs |> 
+    mutate(row_num = row_number()) |> 
+    filter(Question == q) |> 
+    select(row_num) |> 
+    pull() |> 
+    min()
+  
+  title_row <- 5 + (q-2)*4 + (prev_rows-1)
+  data_row <- title_row+2
+  
+  writeData(wb, "SoT Data", title, startRow = title_row, startCol = 2)
+  writeData(wb, "SoT Data", q_figs, startRow = data_row, startCol = 2)
+  
+  addStyle(wb, "SoT Data", style = s_data_table_title,
+           rows = title_row, cols = 2)
+  addStyle(wb, "SoT Data", s_data_table_header,
+           rows = data_row, cols = 2:(ncol(q_figs)+1),
+           gridExpand = TRUE)
+  addStyle(wb, "SoT Data", s_table,
+           rows = data_row:(data_row+nrow(q_figs)),
+           cols = 2:(ncol(q_figs)+1),
+           gridExpand = TRUE, stack = TRUE)
+  
+  # check for merge
+  
+  
+}
+
+paste_data(figs, 2)
+paste_data(figs, 3)
+paste_data(figs, 4)
+
+setColWidths(wb, "SoT Data", cols = 3, widths = "auto")
 
 #### Step x : write data to excel ----
 
