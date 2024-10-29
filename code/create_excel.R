@@ -16,9 +16,9 @@ library(lubridate)
 library(tidylog)
 library(openxlsx)
 
-source(code/pull_numbers.R)
+#### Step 1 : source numbers ----
 
-#### Step 1 : import out numbers ----
+source("code/pull_numbers.R")
 
 #### Step x : define styles ----
 
@@ -29,6 +29,7 @@ s_title <- createStyle(
 
 s_subtitle <- createStyle(
   fgFill = "#B8CCE4",
+  textDecoration = "bold",
   border = "bottom",
   borderStyle = "thin"
 )
@@ -36,11 +37,13 @@ s_subtitle <- createStyle(
 s_table <- createStyle(
   border = c("top", "bottom", "left", "right"),
   borderStyle = "thin",
-  halign = "center"
+  halign = "center",
+  valign = "center"
 )
 
 s_table_header <- createStyle(
   fgFill = "#B8CCE4",
+  
 )
 
 s_priority <- createStyle(
@@ -49,45 +52,133 @@ s_priority <- createStyle(
 
 s_p_high <- createStyle(
   fgFill = "#808080",
+  textDecoration = "bold",
   border = c("top", "bottom", "left", "right"),
   borderStyle = "thin",
 )
 
 s_p_med <- createStyle(
   fgFill = "#BFBFBF",
+  textDecoration = "bold",
   border = c("top", "bottom", "left", "right"),
   borderStyle = "thin",
 )
 
 s_p_low <- createStyle(
   fgFill = "#F2F2F2",
+  textDecoration = "bold",
   border = c("top", "bottom", "left", "right"),
   borderStyle = "thin",
 )
 
 #### Step x : create xlsx file ----
 
+board <- figs |> 
+  select(NHS_Board_of_Treatment) |> 
+  distinct() |> 
+  pull()
+
+qe <- figs |> 
+  select(last_col()) |> 
+  names() |> 
+  ymd() |> 
+  format("%d %B %Y")
+
+## create workbook and sheets
+
 wb <- createWorkbook()
 
 modifyBaseFont(wb, fontSize = 12,
                fontName = "Arial")
 
-addWorksheet(wb, "phs logo")
-showGridLines(wb, "phs logo", showGridLines = FALSE)
+addWorksheet(wb, "SoT")
+addWorksheet(wb, "SoT Data")
+showGridLines(wb, "SoT", showGridLines = FALSE)
+showGridLines(wb, "SoT Data", showGridLines = FALSE)
 
-insertImage(wb, "phs logo", "phs-logo.png",
-            startRow = 2, startCol = 8)
+## Insert common elements
 
-addStyle(wb, "phs logo", s_title,
-         rows = 2, cols = 2)
-addStyle(wb, "phs logo", s_subtitle,
-         rows = 4, cols = 2)
-addStyle(wb, "phs logo", s_table_header,
-         rows = 6, cols = 2:6, gridExpand = TRUE)
-addStyle(wb, "phs logo", s_table,
-         rows = 7, cols = 2:6, gridExpand = TRUE)
-addStyle(wb, "phs logo", s_p_med,
-         rows = 8, cols = 2)
+# PHS logo
+insertImage(wb, "SoT", "phs-logo.png",
+            startRow = 1, startCol = 7,
+            width = 2.29, height = 1)
+
+insertImage(wb, "SoT Data", "phs-logo.png",
+            startRow = 1, startCol = 12,
+            width = 2.29, height = 1)
+
+# Title
+title <- paste0("Stage of Treatment - ",
+                board,
+                " - Quarter Ending ",
+                qe)
+
+writeData(wb, "SoT", title, startRow = 1, startCol = 2)
+addStyle(wb, "SoT", s_title, rows = 1, cols = 2)
+
+writeData(wb, "SoT Data", title, startRow = 1, startCol = 2)
+addStyle(wb, "SoT Data", s_title, rows = 1, cols = 2)
+
+
+## Questions Sheet
+
+setColWidths(wb, "SoT", cols = 1:7,
+             widths = c(2.5, 11, 2, 10, 40, 35, 28))
+
+setRowHeights(wb, "SoT", rows = 1:12,
+              heights = c(30,31,25,15,15,46,28,16,16,16,16,34))
+
+writeData(wb, "SoT", "Data Quality Questions",
+          startRow = 4, startCol = 2)
+addStyle(wb, "SoT", s_subtitle, rows = 4, cols = 2:7, gridExpand = TRUE)
+
+description <- paste0("The following questions pinpoint areas", 
+                      " where local insight will help enhance",
+                      " our understanding of recent trends and",
+                      " quality assure the data accordingly.")
+writeData(wb, "SoT", description, startRow = 6, startCol = 2)
+
+writeData(wb, "SoT", "Priority:", startRow = 8, startCol = 2)
+addStyle(wb, "SoT", s_priority, rows = 8, cols = 2)
+
+writeData(wb, "SoT", "High", startRow = 8, startCol = 4)
+addStyle(wb, "SoT", s_p_high, rows = 8, cols = 4)
+
+writeData(wb, "SoT", "Medium", startRow = 9, startCol = 4)
+addStyle(wb, "SoT", s_p_med, rows = 9, cols = 4)
+
+writeData(wb, "SoT", "Low", startRow = 10, startCol = 4)
+addStyle(wb, "SoT", s_p_low, rows = 10, cols = 4)
+
+## Question table
+
+n_q <- figs |> 
+  select(Question) |> 
+  max()
+
+q_table <- data.frame(Number = c(1:n_q)) |> 
+  mutate(` ` = "",
+         Question = "",
+         `blank` = "",
+         Response = "")
+
+for (i in 0:nrow(q_table)) {
+  
+  mergeCells(wb, "SoT", cols = 4:5, rows = 12+i)
+  mergeCells(wb, "SoT", cols = 6:7, rows = 12+i)
+  
+}
+
+setRowHeights(wb, "SoT", rows = 13:(12+n_q),
+              heights = 34)
+
+writeData(wb, "SoT", q_table, startRow = 12, startCol = 2)
+addStyle(wb, "SoT", s_table_header, rows = 12, cols = 2:7,
+         gridExpand = TRUE)
+addStyle(wb, "SoT", s_table, rows = 12:(12+nrow(q_table)), cols = 2:7,
+         gridExpand = TRUE, stack = TRUE)
+
+## Data sheet
 
 #### Step x : write data to excel ----
 
