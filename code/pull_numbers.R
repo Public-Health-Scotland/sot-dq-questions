@@ -108,5 +108,5 @@ figs <- inner_join(params, data, by = c("Patient_Type",
   arrange(Date) |> 
   mutate(Date = format(Date, "%d/%m/%Y"),
          Specialty = str_to_title(Specialty)) |> 
-  pivot_wider(names_from = "Date", values_from = "value")
-
+  pivot_wider(names_from = "Date", values_from = "value") |> 
+  mutate(across(where(is.numeric), ~ replace_na(.,0)))
