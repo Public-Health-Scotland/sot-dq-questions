@@ -129,6 +129,11 @@ s_table_header <- createStyle(
   
 )
 
+s_question_text <- createStyle(
+  wrapText = TRUE,
+  halign = "left"
+)
+
 s_priority <- createStyle(
   textDecoration = "bold",
 )
@@ -255,6 +260,9 @@ q_table <- data.frame(Number = c(1:n_q)) |>
          `blank` = "",
          Response = "")
 
+q_table[1,3] <- paste0("Are there any new or ongoing data quality issues",
+                       " that you wish to bring to our attention?")
+
 for (i in 0:nrow(q_table)) {
   
   mergeCells(wb, "SoT", cols = 4:5, rows = 12+i)
@@ -270,6 +278,8 @@ addStyle(wb, "SoT", s_table_header, rows = 12, cols = 2:7,
          gridExpand = TRUE)
 addStyle(wb, "SoT", s_table, rows = 12:(12+nrow(q_table)), cols = 2:7,
          gridExpand = TRUE, stack = TRUE)
+addStyle(wb, "SoT", s_question_text, rows = 13, cols = 4:5,
+         stack = TRUE)
 
 #### Step 5 : Data sheet ----
 
