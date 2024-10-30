@@ -312,5 +312,13 @@ setColWidths(wb, "SoT Data", cols = 3, widths = "auto")
 
 #### Step 6 : write to excel ----
 
-saveWorkbook(wb, "output/template.xlsx", overwrite = TRUE)
+qe <- figs |> 
+  select(last_col()) |> 
+  names() |> 
+  dmy() |> 
+  format("%b %Y")
+
+fname <- paste0("output/","SoT Data Quality ", board ," - ", qe, ".xlsx")
+
+saveWorkbook(wb, fname, overwrite = TRUE)
 
