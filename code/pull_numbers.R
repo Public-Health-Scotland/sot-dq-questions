@@ -56,7 +56,7 @@ rr_nop <- read.xlsx(paste0(dashboard_fpath, "RR Monthly.xlsx"),
                 sep.names = "_") |> 
   mutate(
     Date = rollforward(my(Date)),
-    quarter = quarter(Date, type = "date_last")) |> 
+    quarter = lubridate::quarter(Date, type = "date_last")) |> 
   select(-Date) |> 
   rename(Date = quarter) |> 
   filter(Date >= max(Date)-years(1)-days(1),
@@ -73,7 +73,7 @@ rr_ipdc <- read.xlsx(paste0(dashboard_fpath, "RR Monthly.xlsx"),
                 sep.names = "_") |> 
   mutate(
     Date = rollforward(my(Date)),
-    quarter = quarter(Date, type = "date_last")) |> 
+    quarter = lubridate::quarter(Date, type = "date_last")) |> 
   select(-Date) |> 
   rename(Date = quarter) |> 
   filter(Date >= max(Date)-years(1)-days(1),
@@ -106,7 +106,7 @@ figs <- inner_join(params, data, by = c("Patient_Type",
                                         "Specialty",
                                         "Indicator")) |>
   arrange(Date) |> 
-  mutate(Date = format(Date, "%D/%M/%Y"),
+  mutate(Date = format(Date, "%d/%m/%Y"),
          Specialty = str_to_title(Specialty)) |> 
   pivot_wider(names_from = "Date", values_from = "value")
 

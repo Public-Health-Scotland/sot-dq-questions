@@ -16,11 +16,94 @@ library(lubridate)
 library(tidylog)
 library(openxlsx)
 
+
+paste_data <- function(q, figs) {
+  
+  title <- paste0("Table ", q-1, " - Data for question ", q)
+  
+  q_figs <- figs |> 
+    filter(Question == q) |> 
+    select(`Patient type` = Patient_Type,
+           Specialty,
+           Indicator,
+           6:10)
+  
+  prev_rows <- figs |> 
+    mutate(row_num = row_number()) |> 
+    filter(Question == q) |> 
+    select(row_num) |> 
+    pull() |> 
+    min()
+  
+  title_row <- 5 + (q-2)*4 + (prev_rows-1)
+  data_row <- title_row+2
+  
+  writeData(wb, "SoT Data", title, startRow = title_row, startCol = 2)
+  writeData(wb, "SoT Data", q_figs, startRow = data_row, startCol = 2)
+  
+  addStyle(wb, "SoT Data", style = s_data_table_title,
+           rows = title_row, cols = 2)
+  addStyle(wb, "SoT Data", s_data_table_header,
+           rows = data_row, cols = 2:(ncol(q_figs)+1),
+           gridExpand = TRUE)
+  addStyle(wb, "SoT Data", s_table,
+           rows = data_row:(data_row+nrow(q_figs)),
+           cols = 2:(ncol(q_figs)+1),
+           gridExpand = TRUE, stack = TRUE)
+  
+}
+
+
+merge_column <- function(var, df, table_start) {
+  
+  df <- df |> 
+    mutate(merge = data.table::rleid(.data[[var]]),
+           row_num = row_number()) |> 
+    group_by(merge) |> 
+    mutate(start_row = min(row_num)+table_start,
+           end_row = max(row_num)+table_start) |> 
+    ungroup()
+  
+  print(paste("merge groups ", select(df, merge)))
+  
+  var_col <- which(colnames(df) == var)-1
+  
+  start_rows <- df |> 
+    select(start_row) |> 
+    distinct() |> 
+    pull()
+  
+  end_rows <- df |> 
+    select(end_row) |> 
+    distinct() |> 
+    pull()
+  
+  merge_groups <- map2(start_rows, end_rows, seq)
+  
+  print(paste(var, table_start))
+  print(merge_groups)
+  
+  map(merge_groups, mergeCells, wb = wb,
+      sheet = "SoT Data", cols = var_col)
+  
+}
+
+merge_table <- function(question, table_start, df) {
+  
+  columns <- c("Patient_Type", "Specialty", "Indicator")
+  
+  df <- df |> 
+    filter(Question == question)
+  
+  map(columns, merge_column, df = df, table_start = table_start)
+  
+}
+
 #### Step 1 : source numbers ----
 
 source("code/pull_numbers.R")
 
-#### Step x : define styles ----
+#### Step 2 : define styles ----
 
 s_title <- createStyle(
   fontSize = 16,
@@ -81,7 +164,7 @@ s_data_table_header <- s_table_header <- createStyle(
   textDecoration = "bold"
 )
 
-#### Step x : create xlsx file ----
+#### Step 3 : Create workbook ----
 
 board <- figs |> 
   select(NHS_Board_of_Treatment) |> 
@@ -130,7 +213,7 @@ writeData(wb, "SoT Data", title, startRow = 1, startCol = 2)
 addStyle(wb, "SoT Data", s_title, rows = 1, cols = 2)
 
 
-## Questions Sheet
+#### Step 4 : Question sheet ----
 
 setColWidths(wb, "SoT", cols = 1:7,
              widths = c(2.5, 11, 2, 10, 40, 35, 28))
@@ -188,7 +271,7 @@ addStyle(wb, "SoT", s_table_header, rows = 12, cols = 2:7,
 addStyle(wb, "SoT", s_table, rows = 12:(12+nrow(q_table)), cols = 2:7,
          gridExpand = TRUE, stack = TRUE)
 
-## Data sheet
+#### Step 5 : Data sheet ----
 
 setColWidths(wb, "SoT Data", cols = 1:9,
              widths = c(2.5, 21, 24, 27, 13, 13, 13, 13, 13))
@@ -201,67 +284,33 @@ writeData(wb, "SoT Data", "Accompanying Data",
 addStyle(wb, "SoT Data", s_subtitle, rows = 3, cols = 2:9, gridExpand = TRUE)
 
 
-check_for_merge <- function(q_figs, col) {
-  
-  q_figs <- q_figs |> 
-    mutate(merge = if_else(lag(Indicator, default = 0) == Indicator,
-                           1, 0))
-  
-  mergeCells(wb, "SoT Data", cols = )
-  
-}
+# Paste data
 
-#
-paste_data <- function(figs, q) {
-  
-  title <- paste0("Table ", q-1, " - Data for question ", q)
-  
-  q_figs <- figs |> 
-    filter(Question == q) |> 
-    select(`Patient type` = Patient_Type,
-           Specialty,
-           Indicator,
-           6:10)
-  
-  prev_rows <- figs |> 
-    mutate(row_num = row_number()) |> 
-    filter(Question == q) |> 
-    select(row_num) |> 
-    pull() |> 
-    min()
-  
-  title_row <- 5 + (q-2)*4 + (prev_rows-1)
-  data_row <- title_row+2
-  
-  writeData(wb, "SoT Data", title, startRow = title_row, startCol = 2)
-  writeData(wb, "SoT Data", q_figs, startRow = data_row, startCol = 2)
-  
-  addStyle(wb, "SoT Data", style = s_data_table_title,
-           rows = title_row, cols = 2)
-  addStyle(wb, "SoT Data", s_data_table_header,
-           rows = data_row, cols = 2:(ncol(q_figs)+1),
-           gridExpand = TRUE)
-  addStyle(wb, "SoT Data", s_table,
-           rows = data_row:(data_row+nrow(q_figs)),
-           cols = 2:(ncol(q_figs)+1),
-           gridExpand = TRUE, stack = TRUE)
-  
-  # check for merge
-  
-  
-}
+map(2:max(figs$Question), paste_data, figs)
 
-paste_data(figs, 2)
-paste_data(figs, 3)
-paste_data(figs, 4)
+
+# Cell merging
+
+prev_rows <- figs |> 
+  mutate(row_num = row_number()) |> 
+  group_by(Question) |> 
+  summarise(prev_rows = min(row_num)-1) |> 
+  ungroup() |> 
+  select(prev_rows) |> 
+  pull()
+
+data_rows <- 7 + (2:max(figs$Question)-2)*4 + (prev_rows)
+
+questions <- figs |> select(Question) |> distinct() |> pull()
+
+pmap(list(question = questions, table_start = data_rows),
+     merge_table, df = figs)
+
 
 setColWidths(wb, "SoT Data", cols = 3, widths = "auto")
 
-#### Step x : write data to excel ----
+
+#### Step 6 : write to excel ----
 
 saveWorkbook(wb, "output/template.xlsx", overwrite = TRUE)
-
-
-
-
 
