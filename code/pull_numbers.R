@@ -14,6 +14,7 @@ library(readr)
 library(dplyr)
 library(lubridate)
 library(stringr)
+library(tidyr)
 library(openxlsx)
 
 #### Step 0a : read in parameters from excel ----

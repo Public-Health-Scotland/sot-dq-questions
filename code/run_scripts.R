@@ -10,7 +10,4 @@
 
 #### Step 0 : Housekeeping ----
 
-library(readr)
-library(dplyr)
-library(lubridate)
-library(tidylog)
+source("code/create_excel.R")

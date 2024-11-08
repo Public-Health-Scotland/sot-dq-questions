@@ -13,6 +13,7 @@
 library(readr)
 library(dplyr)
 library(lubridate)
+library(purrr)
 library(tidylog)
 library(openxlsx)
 
