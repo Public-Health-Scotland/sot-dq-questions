@@ -97,4 +97,4 @@ data <- bind_rows(perf, rr) |>
 
 rm(perf, rr)
 
-write_rds(data, "data/data.rds")
+write_rds(data, "temp/data.rds")
