@@ -106,7 +106,7 @@ merge_table <- function(question, table_start, df) {
 #### Step 1 : source numbers ----
 
 params <- read_rds('temp/params.rds')
-data <- read_rds("data/data.rds")
+data <- read_rds("temp/data.rds")
 
 figs <- params |> 
   filter(Question != 1) |> 
