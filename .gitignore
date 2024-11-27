@@ -6,4 +6,6 @@
 *.xlsx
 *.rds
 
+temp/
+
 scrap.R
