@@ -8,7 +8,9 @@
 # R version 4.1.2 (2021-11-01)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#### Step 0 : Housekeeping (initial change which will be overwritten) ----
+
+#### Step 0 : Housekeeping (change the exact line to try and get a conflict)  ----
+
 
 library(readr)
 library(dplyr)
@@ -99,3 +101,5 @@ data <- bind_rows(perf, rr) |>
 rm(perf, rr)
 
 write_rds(data, "temp/data.rds")
+
+# another change
