@@ -1,9 +1,9 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# pull_numbers.R
+# read_data.R
 # Angus Morton
-# 2024-10-22
+# 2024-11-19
 # 
-# Pull out the numbers for the post snapshot questions
+# Read in and wrangle the data required for creating the template
 # 
 # R version 4.1.2 (2021-11-01)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -12,14 +12,12 @@
 
 library(readr)
 library(dplyr)
+library(tidyr)
 library(lubridate)
 library(stringr)
 library(tidyr)
 library(openxlsx)
 
-#### Step 0a : read in parameters from excel ----
-
-params <- read.xlsx("question_parameters.xlsx")
 
 #### Step 1 : import dashboard data ----
 
@@ -27,8 +25,8 @@ dashboard_fpath <- paste0("/PHI_conf/WaitingTimes/SoT/Projects/R Shiny DQ/",
                           "Snapshot BOXI/")
 
 perf_nop <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
-                  sheet = "NewOP",
-                          sep.names = "_") |> 
+                      sheet = "NewOP",
+                      sep.names = "_") |> 
   mutate(Date = dmy(Date)) |> 
   filter(Date >= max(Date)-years(1)-days(1),
          month(Date) %in% c(3,6,9,12)) |> 
@@ -37,8 +35,8 @@ perf_nop <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
                              "Attendances", "Ongoing Waits"))
 
 perf_ipdc <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
-                      sheet = "IPDC",
-                      sep.names = "_") |> 
+                       sheet = "IPDC",
+                       sep.names = "_") |> 
   mutate(Date = dmy(Date)) |> 
   filter(Date >= max(Date)-years(1)-days(1),
          month(Date) %in% c(3,6,9,12)) |> 
@@ -53,8 +51,8 @@ perf <- bind_rows(perf_nop, perf_ipdc) |>
 rm(perf_nop, perf_ipdc)
 
 rr_nop <- read.xlsx(paste0(dashboard_fpath, "RR Monthly.xlsx"),
-                sheet = "ALL",
-                sep.names = "_") |> 
+                    sheet = "ALL",
+                    sep.names = "_") |> 
   mutate(
     Date = rollforward(my(Date)),
     quarter = lubridate::quarter(Date, type = "date_last")) |> 
@@ -70,8 +68,8 @@ rr_nop <- read.xlsx(paste0(dashboard_fpath, "RR Monthly.xlsx"),
   pivot_longer(Additions_to_list:Other_reasons, names_to = "Indicator")
 
 rr_ipdc <- read.xlsx(paste0(dashboard_fpath, "RR Monthly.xlsx"),
-                sheet = "IPDC",
-                sep.names = "_") |> 
+                     sheet = "IPDC",
+                     sep.names = "_") |> 
   mutate(
     Date = rollforward(my(Date)),
     quarter = lubridate::quarter(Date, type = "date_last")) |> 
@@ -100,14 +98,4 @@ data <- bind_rows(perf, rr) |>
 
 rm(perf, rr)
 
-#### Step 2 : pull numbers ----
-
-figs <- inner_join(params, data, by = c("Patient_Type",
-                                        "NHS_Board_of_Treatment",
-                                        "Specialty",
-                                        "Indicator")) |>
-  arrange(Date) |> 
-  mutate(Date = format(Date, "%d/%m/%Y"),
-         Specialty = str_to_title(Specialty)) |> 
-  pivot_wider(names_from = "Date", values_from = "value") |> 
-  mutate(across(where(is.numeric), ~ replace_na(.,0)))
+write_rds(data, "temp/data.rds")

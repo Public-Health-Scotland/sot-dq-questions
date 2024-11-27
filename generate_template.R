@@ -1,18 +1,21 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# create_excel.R
+# generate_template.R
 # Angus Morton
-# 2024-09-18
+# 2024-11-20
 # 
-# Create excel template filled in with numbers
+# Once parameters have been selected by the shiny app this script
+# generates the template and saves it
 # 
 # R version 4.1.2 (2021-11-01)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 #### Step 0 : Housekeeping ----
 
 library(readr)
 library(dplyr)
 library(lubridate)
+library(stringr)
 library(purrr)
 library(tidylog)
 library(openxlsx)
@@ -102,7 +105,22 @@ merge_table <- function(question, table_start, df) {
 
 #### Step 1 : source numbers ----
 
-source("code/pull_numbers.R")
+params <- read_rds('temp/params.rds')
+data <- read_rds("temp/data.rds")
+
+figs <- params |> 
+  filter(Question != 1) |> 
+  inner_join(data, by = c("Patient_Type",
+                          "NHS_Board_of_Treatment",
+                          "Specialty",
+                          "Indicator")) |>
+  arrange(Date) |> 
+  select(-Priority) |> 
+  mutate(Date = format(Date, "%d/%m/%Y"),
+         Specialty = str_to_title(Specialty)) |> 
+  pivot_wider(names_from = "Date", values_from = "value") |> 
+  mutate(across(where(is.numeric), ~ replace_na(.,0)))
+
 
 #### Step 2 : define styles ----
 
