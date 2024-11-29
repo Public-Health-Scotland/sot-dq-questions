@@ -24,16 +24,6 @@ ptypes <- data |>
   distinct() |> 
   pull()
 
-specs <- data |> 
-  select(Specialty) |> 
-  distinct() |> 
-  pull()
-
-indicators <- data |> 
-  select(Indicator) |> 
-  distinct() |> 
-  pull()
-
 params <- data.frame(matrix(ncol = 3, nrow = 0))
 x <- c("Patient_Type", "Specialty", "Indicator")
 colnames(params) <- x
@@ -60,7 +50,7 @@ ui <- fluidPage(
            selectInput("spec", "Select Specialty", choices = NULL)
     ),
     column(width = 3, 
-           selectInput("indicator", "Select Indicator", choices = indicators)
+           selectInput("indicator", "Select Indicator", choices = NULL)
     ),
     column(width = 3,
            actionButton("add_row", "Add Row"))
