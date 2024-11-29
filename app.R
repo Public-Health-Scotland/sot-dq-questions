@@ -88,7 +88,8 @@ ui <- fluidPage(
     column(
       width = 6,
       tableOutput("all_questions"),
-      actionButton("generate", "Generate Template"))
+      actionButton("generate", "Generate Template"),
+      textOutput("saved"))
   )
   
 )
@@ -168,6 +169,8 @@ server <- function(input, output, session) {
     write_rds(RV$all_questions, 'temp/params.rds')
     
     source('generate_template.R')
+    
+    output$saved <- renderText("Template Saved")
     
   })
   
