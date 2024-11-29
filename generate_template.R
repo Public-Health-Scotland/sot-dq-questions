@@ -70,8 +70,6 @@ merge_column <- function(var, df, table_start) {
            end_row = max(row_num)+table_start) |> 
     ungroup()
   
-  print(paste("merge groups ", select(df, merge)))
-  
   var_col <- which(colnames(df) == var)-1
   
   start_rows <- df |> 
@@ -85,9 +83,6 @@ merge_column <- function(var, df, table_start) {
     pull()
   
   merge_groups <- map2(start_rows, end_rows, seq)
-  
-  print(paste(var, table_start))
-  print(merge_groups)
   
   map(merge_groups, mergeCells, wb = wb,
       sheet = "SoT Data", cols = var_col)
