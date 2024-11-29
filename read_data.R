@@ -8,9 +8,7 @@
 # R version 4.1.2 (2021-11-01)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
 #### Step 0 : Housekeeping (change the exact line to try and get a conflict)  ----
-
 
 library(readr)
 library(dplyr)
@@ -86,9 +84,17 @@ rr_ipdc <- read.xlsx(paste0(dashboard_fpath, "RR Monthly.xlsx"),
   ungroup() |> 
   pivot_longer(Additions_to_list:Other_reasons, names_to = "Indicator")
 
-rr <- bind_rows(rr_nop, rr_ipdc)
+rr <- bind_rows(rr_nop, rr_ipdc) |> 
+  filter(Indicator != "Attended")
 
 rm(rr_nop, rr_ipdc)
+
+spec_order <- c("All Specialties",
+                data |> 
+                  select(Specialty) |> 
+                  distinct() |> 
+                  filter(Specialty != "All Specialties") |> 
+                  pull())
 
 data <- bind_rows(perf, rr) |> 
   mutate(Indicator = str_replace_all(Indicator, "_", " "),
@@ -96,10 +102,14 @@ data <- bind_rows(perf, rr) |>
            NHS_Board_of_Treatment == "Golden Jubilee National Hospital",
            "NHS Golden Jubilee",
            NHS_Board_of_Treatment
-         ))
+         )) |> 
+  filter(NHS_Board_of_Treatment != "NHS Scotland") |> 
+  arrange(NHS_Board_of_Treatment,
+          match(Specialty, spec_order),
+          desc(Patient_Type))
 
 rm(perf, rr)
 
 write_rds(data, "temp/data.rds")
 
-# another change
+
