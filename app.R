@@ -24,16 +24,6 @@ ptypes <- data |>
   distinct() |> 
   pull()
 
-specs <- data |> 
-  select(Specialty) |> 
-  distinct() |> 
-  pull()
-
-indicators <- data |> 
-  select(Indicator) |> 
-  distinct() |> 
-  pull()
-
 params <- data.frame(matrix(ncol = 3, nrow = 0))
 x <- c("Patient_Type", "Specialty", "Indicator")
 colnames(params) <- x
@@ -57,10 +47,10 @@ ui <- fluidPage(
            selectInput("ptype", "Select Patient Type", ptypes)
     ),
     column(width = 3, 
-           selectInput("spec", "Select Specialty", specs)
+           selectInput("spec", "Select Specialty", choices = NULL)
     ),
     column(width = 3, 
-           selectInput("indicator", "Select Indicator", indicators)
+           selectInput("indicator", "Select Indicator", choices = NULL)
     ),
     column(width = 3,
            actionButton("add_row", "Add Row"))
@@ -88,12 +78,37 @@ ui <- fluidPage(
     column(
       width = 6,
       tableOutput("all_questions"),
-      actionButton("generate", "Generate Template"))
+      actionButton("generate", "Generate Template"),
+      textOutput("saved"))
   )
   
 )
 
 server <- function(input, output, session) {
+  
+  valid_choices <- reactive({
+    filter(data,
+           NHS_Board_of_Treatment == input$board,
+           Patient_Type == input$ptype,
+           )
+  })
+  observeEvent(valid_choices(), {
+    current_choice <- input$spec
+    choices <- unique(valid_choices()$Specialty)
+    updateSelectInput(inputId = "spec", choices = unique(c("All Specialties",
+                                                           sort(choices))))
+    if (current_choice %in% choices) {
+      updateSelectInput(inputId = "spec", selected = current_choice)
+    }
+  })
+  observeEvent(valid_choices(), {
+    current_choice <- input$indicator
+    choices <- unique(valid_choices()$Indicator)
+    updateSelectInput(inputId = "indicator", choices = choices)
+    if (current_choice %in% choices) {
+      updateSelectInput(inputId = "indicator", selected = current_choice)
+    }
+  })
   
   RV <- reactiveValues()
   RV$current_qnum <- 2
@@ -144,6 +159,8 @@ server <- function(input, output, session) {
     write_rds(RV$all_questions, 'temp/params.rds')
     
     source('generate_template.R')
+    
+    output$saved <- renderText("Template Saved")
     
   })
   

@@ -26,6 +26,7 @@ paste_data <- function(q, figs) {
   title <- paste0("Table ", q-1, " - Data for question ", q)
   
   q_figs <- figs |> 
+    filter(Question != 1) |> 
     filter(Question == q) |> 
     select(`Patient type` = Patient_Type,
            Specialty,
@@ -33,6 +34,7 @@ paste_data <- function(q, figs) {
            6:10)
   
   prev_rows <- figs |> 
+    filter(Question != 1) |> 
     mutate(row_num = row_number()) |> 
     filter(Question == q) |> 
     select(row_num) |> 
@@ -68,8 +70,6 @@ merge_column <- function(var, df, table_start) {
            end_row = max(row_num)+table_start) |> 
     ungroup()
   
-  print(paste("merge groups ", select(df, merge)))
-  
   var_col <- which(colnames(df) == var)-1
   
   start_rows <- df |> 
@@ -84,9 +84,6 @@ merge_column <- function(var, df, table_start) {
   
   merge_groups <- map2(start_rows, end_rows, seq)
   
-  print(paste(var, table_start))
-  print(merge_groups)
-  
   map(merge_groups, mergeCells, wb = wb,
       sheet = "SoT Data", cols = var_col)
   
@@ -97,6 +94,7 @@ merge_table <- function(question, table_start, df) {
   columns <- c("Patient_Type", "Specialty", "Indicator")
   
   df <- df |> 
+    select(-Priority) |> 
     filter(Question == question)
   
   map(columns, merge_column, df = df, table_start = table_start)
@@ -109,13 +107,11 @@ params <- read_rds('temp/params.rds')
 data <- read_rds("temp/data.rds")
 
 figs <- params |> 
-  filter(Question != 1) |> 
   inner_join(data, by = c("Patient_Type",
                           "NHS_Board_of_Treatment",
                           "Specialty",
                           "Indicator")) |>
   arrange(Date) |> 
-  select(-Priority) |> 
   mutate(Date = format(Date, "%d/%m/%Y"),
          Specialty = str_to_title(Specialty)) |> 
   pivot_wider(names_from = "Date", values_from = "value") |> 
@@ -300,6 +296,30 @@ addStyle(wb, "SoT", s_table, rows = 12:(12+nrow(q_table)), cols = 2:7,
 addStyle(wb, "SoT", s_question_text, rows = 13, cols = 4:5,
          stack = TRUE)
 
+p_rows <- params |> 
+  mutate(q_row = Question+12) |> 
+  select(q_row, Priority) |> 
+  distinct()
+
+p_h_rows <- p_rows |> 
+  filter(Priority == "High") |> 
+  select(q_row) |> 
+  pull()
+
+p_m_rows <- p_rows |> 
+  filter(Priority == "Medium") |> 
+  select(q_row) |> 
+  pull()
+
+p_l_rows <- p_rows |> 
+  filter(Priority == "Low") |> 
+  select(q_row) |> 
+  pull()
+
+addStyle(wb, "SoT", s_p_high, p_h_rows, cols = 3)
+addStyle(wb, "SoT", s_p_med, p_m_rows, cols = 3)
+addStyle(wb, "SoT", s_p_low, p_l_rows, cols = 3)
+
 #### Step 5 : Data sheet ----
 
 setColWidths(wb, "SoT Data", cols = 1:9,
@@ -321,6 +341,7 @@ map(2:max(figs$Question), paste_data, figs)
 # Cell merging
 
 prev_rows <- figs |> 
+  filter(Question != 1) |> 
   mutate(row_num = row_number()) |> 
   group_by(Question) |> 
   summarise(prev_rows = min(row_num)-1) |> 
@@ -330,7 +351,11 @@ prev_rows <- figs |>
 
 data_rows <- 7 + (2:max(figs$Question)-2)*4 + (prev_rows)
 
-questions <- figs |> select(Question) |> distinct() |> pull()
+questions <- figs |>
+  filter(Question != 1) |>
+  select(Question) |>
+  distinct() |>
+  pull()
 
 pmap(list(question = questions, table_start = data_rows),
      merge_table, df = figs)
