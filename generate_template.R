@@ -31,7 +31,7 @@ paste_data <- function(q, figs) {
     select(`Patient type` = Patient_Type,
            Specialty,
            Indicator,
-           6:10)
+           7:11)
   
   prev_rows <- figs |> 
     filter(Question != 1) |> 
