@@ -161,6 +161,7 @@ server <- function(input, output, session) {
     source('generate_template.R')
     
     output$saved <- renderText("Template Saved")
+    stopApp()
     
   })
   
