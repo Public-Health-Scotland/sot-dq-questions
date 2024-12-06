@@ -16,6 +16,7 @@ library(readr)
 library(dplyr)
 library(lubridate)
 library(stringr)
+library(janitor)
 library(purrr)
 library(tidylog)
 library(openxlsx)
@@ -277,6 +278,32 @@ q_table <- data.frame(Number = c(1:n_q)) |>
 
 q_table[1,3] <- paste0("Are there any new or ongoing data quality issues",
                        " that you wish to bring to our attention?")
+
+# Changes
+
+changes <- figs |> 
+  rename(q = 11,
+         prev_q = 10,
+         prev_y = 7) |> 
+  select(Question, Patient_Type, Specialty, Indicator, 7, 10, 11) |> 
+  mutate(q_change = q - prev_q,
+         q_change_p = 100*(q - prev_q)/prev_q,
+         y_change = q - prev_y,
+         y_change_p = 100*(q - prev_y)/prev_y) |>
+  mutate(q_change_p = if_else(is.nan(q_change_p) |
+                                is.infinite(q_change_p),
+                              NA,
+                              q_change_p),
+         y_change_p = if_else(is.nan(y_change_p) |
+                                is.infinite(y_change_p),
+                              NA,
+                              y_change_p)) |> 
+  mutate(q_change_p = if_else(!is.na(q_change_p),
+                              paste0(round_half_up(q_change_p, digits = 1), "%"),
+                              as.character(q_change_p)),
+         y_change_p = if_else(!is.na(y_change_p),
+                              paste0(round_half_up(y_change_p, digits = 1), "%"),
+                              as.character(y_change_p)))
 
 for (i in 0:nrow(q_table)) {
   
