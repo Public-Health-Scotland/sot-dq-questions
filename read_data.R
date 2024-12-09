@@ -108,6 +108,21 @@ data <- bind_rows(perf, rr) |>
           match(Specialty, spec_order),
           desc(Patient_Type))
 
+dates <- data |> 
+  select(Date) |> 
+  distinct()
+
+data_empty <- data |> 
+  select(Patient_Type, Indicator, NHS_Board_of_Treatment, Specialty) |>
+  distinct() |> 
+  cross_join(dates) |>
+  mutate(value = 0) |> 
+  anti_join(data, by = c("Patient_Type", "Indicator", "NHS_Board_of_Treatment",
+                         "Specialty", "Date"))
+
+data <- data |> 
+  bind_rows(data_empty)
+
 rm(perf, rr)
 
 write_rds(data, "temp/data.rds")

@@ -16,6 +16,7 @@ library(readr)
 library(dplyr)
 library(lubridate)
 library(stringr)
+library(janitor)
 library(purrr)
 library(tidylog)
 library(openxlsx)
@@ -278,6 +279,57 @@ q_table <- data.frame(Number = c(1:n_q)) |>
 q_table[1,3] <- paste0("Are there any new or ongoing data quality issues",
                        " that you wish to bring to our attention?")
 
+# Changes
+
+changes <- figs |> 
+  rename(q = 11,
+         prev_q = 10,
+         prev_y = 7) |> 
+  select(Question, Patient_Type, Specialty, Indicator, 7, 10, 11) |> 
+  mutate(q_change = q - prev_q,
+         q_change_p = 100*(q - prev_q)/prev_q,
+         y_change = q - prev_y,
+         y_change_p = 100*(q - prev_y)/prev_y,
+         Patient_Type = case_when(
+           Patient_Type == "New Outpatient" ~ "NOP",
+           Patient_Type == "Inpatient/Day case" ~ "IPDC")) |>
+  mutate(q_change_p = if_else(is.nan(q_change_p) |
+                                is.infinite(q_change_p),
+                              NA,
+                              q_change_p),
+         q_change_pos = case_when(q_change > 0 ~ "+",
+                                   TRUE ~ ""),
+         y_change_p = if_else(is.nan(y_change_p) |
+                                is.infinite(y_change_p),
+                              NA,
+                              y_change_p),
+         y_change_pos = case_when(y_change > 0 ~ "+",
+                                   TRUE ~ "")) |> 
+  mutate(q_change_p = if_else(!is.na(q_change_p),
+                              paste0(round_half_up(q_change_p, digits = 1), "%"),
+                              as.character(q_change_p)),
+         y_change_p = if_else(!is.na(y_change_p),
+                              paste0(round_half_up(y_change_p, digits = 1), "%"),
+                              as.character(y_change_p)),
+         text = paste0(Patient_Type, " ",
+                       Specialty, " ",
+                       Indicator, " : ",
+                       "q on q ",
+                       q_change_pos, q_change, ", ",
+                       q_change_pos, q_change_p, ". ",
+                       "y on y ",
+                       y_change_pos, y_change, ", ",
+                       y_change_pos, y_change_p)) |> 
+  group_by(Question) |> 
+  summarise(
+    n_indicators = n(),
+    change_figs = paste(text, collapse = "\n")
+  ) |> 
+  ungroup()
+
+
+q_table[2:(nrow(changes)+1),5] <- changes |> select(change_figs) |> pull()
+
 for (i in 0:nrow(q_table)) {
   
   mergeCells(wb, "SoT", cols = 4:5, rows = 12+i)
@@ -285,16 +337,26 @@ for (i in 0:nrow(q_table)) {
   
 }
 
-setRowHeights(wb, "SoT", rows = 13:(12+n_q),
+row_heights <- changes |>
+  mutate(row_heights = n_indicators*17) |>
+  select(row_heights) |> 
+  pull()
+
+setRowHeights(wb, "SoT", rows = 13,
               heights = 34)
 
+setRowHeights(wb, "SoT", rows = 14:(14+length(row_heights)),
+              heights = row_heights)
+
 writeData(wb, "SoT", q_table, startRow = 12, startCol = 2)
+
 addStyle(wb, "SoT", s_table_header, rows = 12, cols = 2:7,
          gridExpand = TRUE)
 addStyle(wb, "SoT", s_table, rows = 12:(12+nrow(q_table)), cols = 2:7,
          gridExpand = TRUE, stack = TRUE)
-addStyle(wb, "SoT", s_question_text, rows = 13, cols = 4:5,
-         stack = TRUE)
+addStyle(wb, "SoT", s_question_text, rows = 13:(13+nrow(q_table)-1),
+         cols = 4:7, gridExpand = TRUE, stack = TRUE)
+
 
 p_rows <- params |> 
   mutate(q_row = Question+12) |> 

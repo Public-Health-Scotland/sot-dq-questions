@@ -12,7 +12,15 @@ library(shiny)
 library(readr)
 library(dplyr)
 
-data <- read_rds("temp/data.rds")
+if (!file.exists('temp/data.rds')) {
+  
+  source("read_data.R")
+  
+} else {
+  
+  data <- read_rds("temp/data.rds")
+  
+}
 
 boards <- data |> 
   select(NHS_Board_of_Treatment) |> 
