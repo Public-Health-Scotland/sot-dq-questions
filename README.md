@@ -1,11 +1,14 @@
-# calculation-of-wait
+# sot-dq-questions
 
-implementing/investigating the SoT calculation of wait rules under the new guidance
+Shiny app to automate the process of filling out the SoT data quality questions template
 
-## code
+## Setup
 
-**wait_calculation/** - This folder contains scripts which calculate wait lengths using specified rules \
-**imports/** - This folder contains scripts which import BOXI reports \
+1. Clone this repository into somewhere on the stats drive and open it in posit
+2. Once opened, run the command renv::restore() in the posit console.
+This sets up your version of the project with the same packages used to develop it.
+This will take a couple of hours but can just be left to run.
+
 
 ### analysis/
 
