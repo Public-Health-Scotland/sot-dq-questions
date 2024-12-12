@@ -15,7 +15,7 @@ Run the shiny app by opening `app.R` and clicking 'Run App'
 
 Once the app opens you will be met with this screen:
 
-!(app_start_page.JPG)
+![alt text](app_start_page.JPG)
 
 ## Scripts
 
