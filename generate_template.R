@@ -213,11 +213,11 @@ showGridLines(wb, "SoT Data", showGridLines = FALSE)
 ## Insert common elements
 
 # PHS logo
-insertImage(wb, "SoT", "phs-logo.png",
+insertImage(wb, "SoT", "images/phs-logo.png",
             startRow = 1, startCol = 7,
             width = 2.29, height = 1)
 
-insertImage(wb, "SoT Data", "phs-logo.png",
+insertImage(wb, "SoT Data", "images/phs-logo.png",
             startRow = 1, startCol = 8,
             width = 2.29, height = 1)
 
@@ -347,6 +347,8 @@ setRowHeights(wb, "SoT", rows = 13,
 
 setRowHeights(wb, "SoT", rows = 14:(14+length(row_heights)),
               heights = row_heights)
+
+setColWidths(wb, "SoT", cols = 6, widths = "auto")
 
 writeData(wb, "SoT", q_table, startRow = 12, startCol = 2)
 
