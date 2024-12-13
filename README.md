@@ -18,7 +18,7 @@ Run the shiny app by opening `app.R` and clicking 'Run App'
 
 Once the app opens you will be met with this screen:
 
-![alt text](images/app_start_page.JPG)
+![alt text](images/app_start_page.JPG =10x)
 
 Select your board and begin adding specialties to your question using the
 dropdowns and the 'Add Row' button. These dropdowns should update to only
