@@ -87,7 +87,7 @@ ui <- fluidPage(
       width = 6,
       tableOutput("all_questions"),
       actionButton("generate", "Generate Template"),
-      textOutput("saved"))
+      textOutput("file_exists"))
   )
   
 )
@@ -161,15 +161,39 @@ server <- function(input, output, session) {
   
   observeEvent(input$generate, {
     
-    RV$all_questions <- RV$all_questions |> 
-      mutate(NHS_Board_of_Treatment = input$board, .after = "Question")
+    qe <- data |> 
+      select(Date) |> 
+      filter(Date == max(Date)) |> 
+      distinct() |> 
+      pull() |> 
+      format("%b %Y")
     
-    write_rds(RV$all_questions, 'temp/params.rds')
+    fpath <- paste0("output/",
+                    "SoT Data Quality ", input$board ," - ", qe, ".xlsx")
     
-    source('generate_template.R')
-    
-    output$saved <- renderText("Template Saved")
-    stopApp()
+    if (file.exists(fpath)) {
+      
+      output$file_exists <- renderText({
+        
+        paste0("File exists. Delete or move existing file to avoid overwriting")
+        
+      })
+      
+    } else {
+      
+      output$file_exists <- renderText("Generating")
+      
+      RV$all_questions <- RV$all_questions |> 
+        mutate(NHS_Board_of_Treatment = input$board, .after = "Question")
+      
+      write_rds(RV$all_questions, 'temp/params.rds')
+      
+      source('generate_template.R')
+      
+      output$saved <- renderText("Template Saved")
+      stopApp()
+      
+    }
     
   })
   
