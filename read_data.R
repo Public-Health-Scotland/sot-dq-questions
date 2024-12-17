@@ -90,7 +90,7 @@ rr <- bind_rows(rr_nop, rr_ipdc) |>
 rm(rr_nop, rr_ipdc)
 
 spec_order <- c("All Specialties",
-                data |> 
+                bind_rows(perf, rr) |> 
                   select(Specialty) |> 
                   distinct() |> 
                   filter(Specialty != "All Specialties") |> 
