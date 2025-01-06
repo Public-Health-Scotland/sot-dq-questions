@@ -237,7 +237,7 @@ addStyle(wb, "SoT Data", s_title, rows = 1, cols = 2)
 #### Step 4 : Question sheet ----
 
 setColWidths(wb, "SoT", cols = 1:7,
-             widths = c(2.5, 11, 2, 10, 40, 35, 28))
+             widths = c(2.5, 11, 2, 10, 40, 54, 28))
 
 setRowHeights(wb, "SoT", rows = 1:12,
               heights = c(30,31,25,15,15,46,28,16,16,16,16,34))
@@ -347,8 +347,6 @@ setRowHeights(wb, "SoT", rows = 13,
 
 setRowHeights(wb, "SoT", rows = 14:(14+length(row_heights)),
               heights = row_heights)
-
-setColWidths(wb, "SoT", cols = 6, widths = "auto")
 
 writeData(wb, "SoT", q_table, startRow = 12, startCol = 2)
 
