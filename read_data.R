@@ -26,8 +26,8 @@ dashboard_fpath <- paste0("/PHI_conf/WaitingTimes/SoT/Projects/R Shiny DQ/",
 
 perf_nop <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
                       sheet = "NewOP",
-                      sep.names = "_") |> 
-  mutate(Date = dmy(Date)) |> 
+                      sep.names = "_",
+                      detectDates = TRUE) |> 
   filter(Date >= max(Date)-years(1)-days(1),
          month(Date) %in% c(3,6,9,12)) |> 
   rename(Indicator = `Ongoing/Completed`) |> 
@@ -36,8 +36,8 @@ perf_nop <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
 
 perf_ipdc <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
                        sheet = "IPDC",
-                       sep.names = "_") |> 
-  mutate(Date = dmy(Date)) |> 
+                       sep.names = "_",
+                       detectDates = TRUE) |> 
   filter(Date >= max(Date)-years(1)-days(1),
          month(Date) %in% c(3,6,9,12)) |> 
   rename(Indicator = `Ongoing/Completed`) |> 
