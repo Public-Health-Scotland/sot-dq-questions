@@ -21,13 +21,24 @@ library(openxlsx)
 
 #### Step 1 : import dashboard data ----
 
-dashboard_fpath <- paste0("/PHI_conf/WaitingTimes/SoT/Projects/R Shiny DQ/",
-                          "Snapshot BOXI/")
+# Snapshot vs Live
+
+if (prepost == "Snapshot") {
+  
+  dashboard_fpath <- paste0("/PHI_conf/WaitingTimes/SoT/Projects/R Shiny DQ/",
+                            "Snapshot BOXI for questions/")
+  
+} else if (prepost == "Live") {
+  
+  dashboard_fpath <- paste0("/PHI_conf/WaitingTimes/SoT/Projects/R Shiny DQ/",
+                            "Live BOXI/")
+  
+}
 
 perf_nop <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
                       sheet = "NewOP",
-                      sep.names = "_",
-                      detectDates = TRUE) |> 
+                      sep.names = "_") |>
+  mutate(Date = dmy(Date)) |> 
   filter(Date >= max(Date)-years(1)-days(1),
          month(Date) %in% c(3,6,9,12)) |> 
   rename(Indicator = `Ongoing/Completed`) |> 
@@ -36,8 +47,8 @@ perf_nop <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
 
 perf_ipdc <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
                        sheet = "IPDC",
-                       sep.names = "_",
-                       detectDates = TRUE) |> 
+                       sep.names = "_") |> 
+  mutate(Date = dmy(Date)) |> 
   filter(Date >= max(Date)-years(1)-days(1),
          month(Date) %in% c(3,6,9,12)) |> 
   rename(Indicator = `Ongoing/Completed`) |> 
@@ -125,6 +136,17 @@ data <- data |>
 
 rm(perf, rr)
 
-write_rds(data, "temp/data.rds")
+if (prepost == "Snapshot") {
+  
+  data_path <- "temp/data_snapshot.rds"
+  
+} else if (prepost == "Live") {
+  
+  data_path <- "temp/data_live.rds"
+  
+}
+
+write_rds(data, data_path)
+
 
 

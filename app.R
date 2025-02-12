@@ -12,14 +12,25 @@ library(shiny)
 library(readr)
 library(dplyr)
 
-if (!file.exists('temp/data.rds')) {
-  
-  source("read_data.R")
-  
+source("functions.R")
+
+prepost <- "Snapshot"
+
+snapshot <- as_datetime(file.info(paste0("/PHI_conf/WaitingTimes/SoT/",
+                                         "Projects/R Shiny DQ/Snapshot BOXI/",
+                                         "CO Quarterly.xlsx"))$mtime)
+
+data_created <- as_datetime(file.info("temp/data_snapshot.rds")$mtime)
+
+
+if (snapshot > data_created | is.na(data_created)) {
+
+  source("read_data.R", local = TRUE)
+
 } else {
-  
-  data <- read_rds("temp/data.rds")
-  
+
+  data <- read_rds("temp/data_snapshot.rds")
+
 }
 
 boards <- data |> 
@@ -44,6 +55,11 @@ all_questions <- data.frame(Question = 1,
 
 
 ui <- fluidPage(
+  
+  fluidRow(
+    radioButtons("prepost", label = "Live or Snapshot",
+                 choices = c("Snapshot", "Live"), selected = "Snapshot")
+  ),
   
   fluidRow(
     selectInput("board", "Select Board", boards)
@@ -94,12 +110,30 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
+  observeEvent(input$prepost, {
+
+    prepost <<- input$prepost
+
+    if (input$prepost == "Live") {
+      if (as.Date(file.info("temp/data_live.rds")$mtime) != Sys.Date() |
+          is.na(as.Date(file.info("temp/data_live.rds")$mtime)))
+      source("read_data.R", local = TRUE)
+      data <<- read_rds("temp/data_live.rds")
+    } else if (input$prepost == "Snapshot") {
+      data <<- read_rds("temp/data_snapshot.rds")
+    }
+
+  })
+  
+  
+  
   valid_choices <- reactive({
     filter(data,
            NHS_Board_of_Treatment == input$board,
            Patient_Type == input$ptype,
            )
   })
+  
   observeEvent(valid_choices(), {
     current_choice <- input$spec
     choices <- unique(valid_choices()$Specialty)
@@ -109,6 +143,7 @@ server <- function(input, output, session) {
       updateSelectInput(inputId = "spec", selected = current_choice)
     }
   })
+  
   observeEvent(valid_choices(), {
     current_choice <- input$indicator
     choices <- unique(valid_choices()$Indicator)
@@ -120,6 +155,7 @@ server <- function(input, output, session) {
   
   RV <- reactiveValues()
   RV$current_qnum <- 2
+  #RV$prepost <- "Snapshot"
   RV$current_question <- params
   RV$all_questions <- all_questions
   
@@ -188,7 +224,7 @@ server <- function(input, output, session) {
       
       write_rds(RV$all_questions, 'temp/params.rds')
       
-      source('generate_template.R')
+      source('generate_template.R', local = TRUE)
       
       output$saved <- renderText("Template Saved")
       stopApp()

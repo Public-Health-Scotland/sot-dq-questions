@@ -105,7 +105,14 @@ merge_table <- function(question, table_start, df) {
 #### Step 1 : source numbers ----
 
 params <- read_rds('temp/params.rds')
-data <- read_rds("temp/data.rds")
+
+if (prepost == "Snapshot") {
+  data_path <- "temp/data_snapshot.rds"
+} else if (prepost == "Live") {
+  data_path <- "temp/data_live.rds"
+}
+
+data <- read_rds(data_path)
 
 figs <- params |> 
   inner_join(data, by = c("Patient_Type",
@@ -434,7 +441,7 @@ qe <- figs |>
   dmy() |> 
   format("%b %Y")
 
-fname <- paste0("output/","SoT Data Quality ", board ," - ", qe, ".xlsx")
+fname <- paste0("output/", prepost,"/SoT Data Quality ", board ," - ", qe, ".xlsx")
 
 saveWorkbook(wb, fname, overwrite = TRUE)
 
