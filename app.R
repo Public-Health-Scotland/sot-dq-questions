@@ -11,8 +11,10 @@
 library(shiny)
 library(readr)
 library(dplyr)
+library(lubridate)
+library(janitor)
 
-source("functions.R")
+#source("functions.R")
 
 prepost <- "Snapshot"
 
@@ -24,13 +26,13 @@ data_created <- as_datetime(file.info("temp/data_snapshot.rds")$mtime)
 
 
 if (snapshot > data_created | is.na(data_created)) {
-
+  
   source("read_data.R", local = TRUE)
-
+  
 } else {
-
+  
   data <- read_rds("temp/data_snapshot.rds")
-
+  
 }
 
 boards <- data |> 
@@ -111,18 +113,18 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   observeEvent(input$prepost, {
-
+    
     prepost <<- input$prepost
-
+    
     if (input$prepost == "Live") {
       if (as.Date(file.info("temp/data_live.rds")$mtime) != Sys.Date() |
           is.na(as.Date(file.info("temp/data_live.rds")$mtime)))
-      source("read_data.R", local = TRUE)
+        source("read_data.R", local = TRUE)
       data <<- read_rds("temp/data_live.rds")
     } else if (input$prepost == "Snapshot") {
       data <<- read_rds("temp/data_snapshot.rds")
     }
-
+    
   })
   
   
@@ -131,7 +133,7 @@ server <- function(input, output, session) {
     filter(data,
            NHS_Board_of_Treatment == input$board,
            Patient_Type == input$ptype,
-           )
+    )
   })
   
   observeEvent(valid_choices(), {
@@ -245,6 +247,5 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui, server)
-
 
 
