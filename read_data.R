@@ -26,7 +26,7 @@ library(openxlsx)
 if (prepost == "Snapshot") {
   
   dashboard_fpath <- paste0("/PHI_conf/WaitingTimes/SoT/Projects/R Shiny DQ/",
-                            "Snapshot BOXI for questions/")
+                            "Snapshot BOXI/")
   
 } else if (prepost == "Live") {
   
