@@ -134,6 +134,10 @@ data_empty <- data |>
 data <- data |> 
   bind_rows(data_empty)
 
+# remove blank specs
+data <- data |> 
+  mutate(Specialty = if_else(is.na(Specialty), "BLANK", Specialty))
+
 rm(perf, rr)
 
 if (prepost == "Snapshot") {
