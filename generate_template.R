@@ -108,8 +108,14 @@ params <- read_rds('temp/params.rds')
 
 if (prepost == "Snapshot") {
   data_path <- "temp/data_snapshot.rds"
+  extract_date <- as_date(file.info(paste0("/PHI_conf/WaitingTimes/SoT/",
+                                           "Projects/R Shiny DQ/Snapshot BOXI/",
+                                           "CO Monthly.xlsx"))$mtime)
 } else if (prepost == "Live") {
   data_path <- "temp/data_live.rds"
+  extract_date <- as_date(file.info(paste0("/PHI_conf/WaitingTimes/SoT/",
+                                           "Projects/R Shiny DQ/Live BOXI/",
+                                           "CO Monthly.xlsx"))$mtime)
 }
 
 data <- read_rds(data_path)
@@ -231,7 +237,7 @@ insertImage(wb, "SoT Data", "images/phs-logo.png",
 # Title
 title <- paste0("Stage of Treatment - ",
                 board,
-                " - Quarter Ending ",
+                " - Month Ending ",
                 qe)
 
 writeData(wb, "SoT", title, startRow = 1, startCol = 2)
@@ -321,7 +327,7 @@ changes <- figs |>
          text = paste0(Patient_Type, " ",
                        Specialty, " ",
                        Indicator, " : ",
-                       "q on q ",
+                       "m on m ",
                        q_change_pos, q_change, ", ",
                        q_change_pos, q_change_p, ". ",
                        "y on y ",
@@ -397,7 +403,8 @@ setColWidths(wb, "SoT Data", cols = 1:9,
 setRowHeights(wb, "SoT Data", rows = 1:2,
               heights = c(40,31))
 
-writeData(wb, "SoT Data", "Accompanying Data",
+writeData(wb, "SoT Data", paste0("Accompanying Data (Extracted ",
+                                 format(extract_date, "%d/%m/%Y"),")"),
           startRow = 3, startCol = 2)
 addStyle(wb, "SoT Data", s_subtitle, rows = 3, cols = 2:9, gridExpand = TRUE)
 

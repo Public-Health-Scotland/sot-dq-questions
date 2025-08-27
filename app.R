@@ -20,7 +20,7 @@ prepost <- "Snapshot"
 
 snapshot <- as_datetime(file.info(paste0("/PHI_conf/WaitingTimes/SoT/",
                                          "Projects/R Shiny DQ/Snapshot BOXI/",
-                                         "CO Quarterly.xlsx"))$mtime)
+                                         "CO Monthly.xlsx"))$mtime)
 
 data_created <- as_datetime(file.info("temp/data_snapshot.rds")$mtime)
 

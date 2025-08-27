@@ -35,22 +35,39 @@ if (prepost == "Snapshot") {
   
 }
 
-perf_nop <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
+
+if (day(Sys.Date()) > 15) {
+  
+  max_date <- rollforward(Sys.Date())
+  
+} else {
+  
+  max_date <- rollback(Sys.Date())
+  
+}
+
+
+data_dates <- c(max_date,
+                rollback(max_date+1-months(1)),
+                rollback(max_date+1-months(2)),
+                rollback(max_date+1-months(3)),
+                rollback(max_date+1-months(12)))
+
+
+perf_nop <- read.xlsx(paste0(dashboard_fpath, "CO Monthly.xlsx"),
                       sheet = "NewOP",
                       sep.names = "_") |>
-  mutate(Date = dmy(Date)) |> 
-  filter(Date >= max(Date)-years(1)-days(1),
-         month(Date) %in% c(3,6,9,12)) |> 
+  mutate(Date = dmy("30-12/1899")+Date) |> 
+  filter(Date %in% data_dates) |> 
   rename(Indicator = `Ongoing/Completed`) |> 
   mutate(Indicator = if_else(Indicator == "Completed",
                              "Attendances", "Ongoing Waits"))
 
-perf_ipdc <- read.xlsx(paste0(dashboard_fpath, "CO Quarterly.xlsx"),
+perf_ipdc <- read.xlsx(paste0(dashboard_fpath, "CO Monthly.xlsx"),
                        sheet = "IPDC",
                        sep.names = "_") |> 
-  mutate(Date = dmy(Date)) |> 
-  filter(Date >= max(Date)-years(1)-days(1),
-         month(Date) %in% c(3,6,9,12)) |> 
+  mutate(Date = dmy("30-12/1899")+Date) |> 
+  filter(Date %in% data_dates) |> 
   rename(Indicator = `Ongoing/Completed`) |> 
   mutate(Indicator = if_else(Indicator == "Completed",
                              "Admissions", "Ongoing Waits"))
@@ -65,34 +82,16 @@ rr_nop <- read.xlsx(paste0(dashboard_fpath, "RR Monthly.xlsx"),
                     sheet = "ALL",
                     sep.names = "_") |> 
   mutate(
-    Date = rollforward(my(Date)),
-    quarter = lubridate::quarter(Date, type = "date_last")) |> 
-  select(-Date) |> 
-  rename(Date = quarter) |> 
-  filter(Date >= max(Date)-years(1)-days(1),
-         month(Date) %in% c(3,6,9,12)) |> 
-  group_by(Patient_Type, NHS_Board_of_Treatment, Specialty, Date) |> 
-  summarise(
-    across(where(is.numeric), sum)
-  ) |> 
-  ungroup() |> 
+    Date = rollforward(my(Date))) |> 
+  filter(Date %in% data_dates) |> 
   pivot_longer(Additions_to_list:Other_reasons, names_to = "Indicator")
 
 rr_ipdc <- read.xlsx(paste0(dashboard_fpath, "RR Monthly.xlsx"),
                      sheet = "IPDC",
                      sep.names = "_") |> 
   mutate(
-    Date = rollforward(my(Date)),
-    quarter = lubridate::quarter(Date, type = "date_last")) |> 
-  select(-Date) |> 
-  rename(Date = quarter) |> 
-  filter(Date >= max(Date)-years(1)-days(1),
-         month(Date) %in% c(3,6,9,12)) |> 
-  group_by(Patient_Type, NHS_Board_of_Treatment, Specialty, Date) |> 
-  summarise(
-    across(where(is.numeric), sum)
-  ) |> 
-  ungroup() |> 
+    Date = rollforward(my(Date))) |> 
+  filter(Date %in% data_dates) |> 
   pivot_longer(Additions_to_list:Other_reasons, names_to = "Indicator")
 
 rr <- bind_rows(rr_nop, rr_ipdc) |> 
